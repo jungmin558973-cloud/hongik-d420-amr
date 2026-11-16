@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-13",
+  "board": "ESP32-S3 USB Serial/JTAG; 16MB quad flash, 8MB embedded PSRAM detected; firmware does not require PSRAM",
+  "fqbn": "esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc",
+  "core_version": "3.3.0",
+  "ESP32Servo": "Original wrapper replaced in current build; dependency no longer used",
+  "Adafruit_BNO055": "1.6.4",
+  "sha256": {
+    "esp32_level_apparent_v4/esp32_level_apparent_v4.ino": "c662ba9518600a2903025d15d203b54af6da87bb361ded75a4baecaf2a641d3c",
+    "esp32_level_predictive_v4/esp32_level_predictive_v4.ino": "e5c68351cf1d7d87f6a3ad5b206d2cc1e81d2bba20ce4b2a6ff4ca0c358850cd",
+    "compiled_predictive_v4/esp32_level_predictive_v4.ino.bin": "23403f87eb6269e8bf679fd51e2ab8329639fb9942a6ffd0678e0999ce12e423"
+  },
+  "validation": "94 tests passed; ESP32-S3 Arduino compile passed; device reports both PWM outputs attached at 100Hz, 14bit and duty changes with request. No physical tray response or slosh reduction confirmed.",
+  "flash_status": "ORIGINAL V4 RESTORED. Experimental predictive/direct-PWM build is no longer flashed. User reports LED off via Jetson USB-C to C, LED on and matching USB identity detected on laptop. Check USB power path and original standalone behavior before firmware changes.",
+  "original_full_flash_sha256": "517649f40213e11fc9b96e84cbb4d0f3c8f6de85a8e98513997e5bb6e52a3480",
+  "original_backup": "../backups/predictive_v4_20261113/esp32_original_16MB.bin",
+  "output_driver": "Arduino-ESP32 LEDC direct, 100Hz, 14-bit; checked attachment/write and readback diagnostics",
+  "deployed_binary_sha256": "46794a8d163e965d3d1c0c0151e967fce4f9205cd553693c5219a2c14a8ea7d6",
+  "next_action": "Confirm servo supply source and restore near-level supported tray posture before servo test. User reports motor battery disconnected. ESP32/IMU USB communications work; both servos remain OFF.",
+  "rollback_binary": "../backups/predictive_v4_20261113/original_app0.bin",
+  "rollback_sha256": "46794a8d163e965d3d1c0c0151e967fce4f9205cd553693c5219a2c14a8ea7d6",
+  "rollback_status": "Exact original app0 restored through laptop /dev/ttyACM0, MAC 44:bd:8d:75:03:18; write hash verified; NVS/bootloader/partition table preserved.",
+  "standalone_original_test": {
+    "result": "Blocked before servo activation by initial tray angle check; status requests only.",
+    "roll_deg": 3.04,
+    "pitch_deg": -65.08,
+    "mode": 0,
+    "roll_enabled": false,
+    "pitch_enabled": false,
+    "log": "../backups/predictive_v4_20261113/original_laptop_manual_test.jsonl",
+    "physical_tilt_confirmed": true,
+    "motor_battery_connected": false,
+    "servo_supply_source": "Awaiting user clarification; do not assume shared battery"
+  }
+}

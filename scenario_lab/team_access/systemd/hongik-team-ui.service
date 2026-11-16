@@ -1,0 +1,21 @@
+[Unit]
+Description=HONGIK CAFE robot console for SSH-tunnel clients
+After=hongik-scenarios.service
+Wants=hongik-scenarios.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/d420_ws/scenario_lab
+Environment=D420_LOCAL_ROBOT=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash %h/d420_ws/scenario_lab/start.sh --allow-real
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=15
+StandardOutput=append:%h/d420_ws/scenario_lab/runs/team-ui.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

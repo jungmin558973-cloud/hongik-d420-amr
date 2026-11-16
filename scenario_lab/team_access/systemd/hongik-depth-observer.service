@@ -1,0 +1,18 @@
+[Unit]
+Description=HONGIK CAFE local front depth observer
+After=hongik-scenarios.service
+Wants=hongik-scenarios.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/d420_ws
+ExecStart=/bin/bash %h/d420_ws/scenario_lab/jetson/depth_start.sh
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGINT
+TimeoutStopSec=10
+StandardOutput=append:%h/d420_ws/scenario_lab/jetson/depth_observer.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

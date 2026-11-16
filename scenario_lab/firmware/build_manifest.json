@@ -1,0 +1,49 @@
+{
+  "time": "2026-10-25T02:40:34.912041+09:00",
+  "status": "ESP32S3_TARGET_COMPILE_PASSED_NOT_FLASHED",
+  "fqbn": "esp32:esp32:esp32s3:CDCOnBoot=cdc",
+  "core": "esp32:esp32@3.3.0",
+  "libraries": {
+    "ESP32Servo": "3.0.9",
+    "Adafruit BNO055": "1.6.4"
+  },
+  "cli": "arduino-cli  Version: 1.5.2-rc.1 Commit: fef6e48df Date: 2026-07-23T11:13:39Z",
+  "source_sha256": "c16175eda1a6bdd6c1d7ad35e793da024ba5d242ddced96ed5c4a2fdd28f2304",
+  "artifacts": {
+    "library_versions.json": {
+      "bytes": 7756,
+      "sha256": "ab6dca8a2118971dea398ba4b70226dd5f11c57b5b207030b69e1601f2064533"
+    },
+    "esp32_app_control.ino.bin": {
+      "bytes": 405424,
+      "sha256": "31f58f75ef2c2e1029bfc162238b5d97ec1b67768aeda703e32b8a96db563c58"
+    },
+    "core_versions.json": {
+      "bytes": 80385,
+      "sha256": "66eaf33e9b2168b6036146598ca6c6a305669cebae15caa0c870e50ba51bc1c9"
+    },
+    "esp32_app_control.ino.bootloader.bin": {
+      "bytes": 20256,
+      "sha256": "e678e8195c799dc5d28359717fb3b90eedaac62e530b266adf84762ae589018e"
+    },
+    "esp32_app_control.ino.partitions.bin": {
+      "bytes": 3072,
+      "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+    },
+    "esp32_app_control.ino.elf": {
+      "bytes": 7761076,
+      "sha256": "cbec68e470a7c53ff606b0ee7ecf7504d62c4443ef59d3237c7a4bf7588b078b"
+    },
+    "esp32_app_control.ino.map": {
+      "bytes": 9023684,
+      "sha256": "0212f6f34ce86ec0576964f1aeadd901dcbe44097e803a172866febd91078fdb"
+    },
+    "esp32_app_control.ino.merged.bin": {
+      "bytes": 4194304,
+      "sha256": "a84236e8eb27c953a012c9572f73a814fbed59946464f780cf8009b60ceb6e6d"
+    }
+  },
+  "hardware_flashed": false,
+  "original_firmware_unchanged": true,
+  "original_firmware_sha256": "674acff222b01efdaf974bd3f47609ccaba67bd24ad3135e95498a4588da7edf"
+}
