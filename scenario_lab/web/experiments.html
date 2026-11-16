@@ -1,0 +1,8 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HONGIK CAFE 실험 기록</title>
+<style>body{font:16px system-ui;background:#f6f6ef;color:#234b40;margin:32px auto;padding:0 20px;max-width:1300px}table{border-collapse:collapse;width:100%;background:white}td,th{text-align:left;padding:12px;border-bottom:1px solid #ddd;vertical-align:top}a{color:#285b4c}small{display:block;color:#66766b}button{padding:10px 20px;margin:12px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere}#status{min-height:24px}.scroll{overflow:auto}</style>
+<h1>실험 기록</h1><p>실험 시작 버튼을 누르면 자동으로 누적 저장합니다. L자 주행은 Jetson이 직접 기록합니다. 화면을 닫아도 기록은 계속됩니다.</p>
+<p>속도 단위 m/s · 각속도 rad/s · 가감속 m/s² · 트레이 각도 °. 가감속은 보고 속도의 차분 계산값입니다. ESP32 측정값은 실제 보고 주기로 갱신되며, 반복 저장된 값에는 새 샘플 여부가 표시됩니다.</p>
+<a href="/navigation">지도·L자 주행으로</a> · <a href="/">주행·트레이 제어실로</a><br><button id="refresh">새로고침</button><p id="status" role="status">기록 확인 중</p>
+<div class="scroll"><table><thead><tr><th>시작 / 실험 ID</th><th>실험 / 모드</th><th>결과 · 정지 사유</th><th>관측 최대 각도</th><th>저장 수</th><th>내보내기</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p>CSV는 주요 신호와 전체 원본 JSON 열을 포함합니다. JSON은 설정·결과·전체 샘플을 포함합니다. 실행 중 기록은 디스크에 반영된 시점까지 내려받습니다. 원본 DB는 Jetson 앱의 runs/experiments.sqlite3에 보관됩니다.</p>
+<script type="module" src="/static/experiments.js"></script></html>

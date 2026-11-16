@@ -1,0 +1,13 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>실험 세팅 · HONGIK CAFE</title>
+<style>body{font:17px system-ui;background:#f4f5ed;color:#234b40;max-width:850px;margin:32px auto;padding:20px}section{background:white;border:1px solid #ccd4c8;padding:24px;margin:16px 0;border-radius:10px}label{display:block;margin:18px 0}select,input{font:inherit;padding:10px;margin:8px;width:170px}input[type=range]{width:60%}button{font:700 18px system-ui;padding:16px;margin:8px;background:#285847;color:white;border:0;border-radius:6px}button:disabled{opacity:.4}#stop{background:#a9392b}p{line-height:1.6}#status{white-space:pre-line;font-size:22px;font-weight:700}small{display:block;color:#657264}</style>
+<h1>실험 세팅</h1><a href="/navigation">지도·L자 화면</a> · <a href="/experiments" target="_blank">저장된 실험 기록</a>
+<section><label>주행 속도<select id="speed"><option value="20">20cm/s</option><option value="30">30cm/s</option><option value="40">40cm/s</option></select></label>
+<label>트레이<select id="tray"><option value="CHASSIS">차체만 · 트레이 설정 유지</option><option value="LEVEL">수평 유지</option><option value="PREDICTIVE">능동 + 수평 유지</option></select></label><small>차체만 시험은 ESP32 없이 가능하며 트레이 제어 상태를 바꾸지 않습니다. 각도 자료가 없으면 미측정으로 저장합니다.</small>
+<label>S-curve 감속 <output id="strength-label">0%</output><br><input id="strength" type="range" min="0" max="100" step="1" value="0"></label><small>0%: 계산한 지점에서 즉시 0 속도 명령. 100%: 기존 완만한 S-curve. 중간 값은 감속 시간을 비례 조절합니다. 장애물 정지는 항상 우선합니다.</small>
+<label>회전 최고 각속도<select id="turn"><option value="0.4">0.4rad/s</option><option value="0.6" selected>0.6rad/s · 기본</option><option value="0.8">0.8rad/s · 실측 후 사용</option></select></label><small>토크 설정이 아닙니다. 목표 각도 근처에서 감속하며 중심이 15cm 이상 밀리면 정지합니다.</small>
+<details><summary>첫 급정지 시험의 제동 모델</summary><label>가정 유효 감속도 [m/s²]<input id="deceleration" type="number" min="0.1" max="3" step="0.1" value="0.5"></label><p>첫 회는 이 가정과 0.10초 지연, 2cm 여유로 정지 명령 지점을 계산합니다. 실제 보장값이 아닙니다. 이후 동일 속도의 정상 급정지 시험에서 측정된 제동 거리로 갱신합니다. 하중·바닥·배터리를 바꿨다면 ‘기존 보정 사용’을 해제하세요.</p></details>
+<label><input id="reuse" type="checkbox" checked>기존 같은 속도 제동 보정 사용</label>
+<button id="brake">▶ 출발 → 160cm 목표 정지 시험</button><button id="route">▶ 이 세팅으로 L자 실험</button><button id="stop">■ 즉시 정지 요청</button>
+<p>L자 기본: 3.2m + 30cm 후 우90° → 2.2m. 각 시험은 현재 위치·방향에서 시작합니다. 첫 검증은 빈 공간에서 낮은 속도로 실시하세요.</p></section>
+<section><div id="status" role="status">상태 확인 중</div><p id="result"></p><p>시작 명령이 수락된 뒤에는 Jetson에서 주행·기록합니다. 창 닫기/화면 연결 단절만으로 취소하지 않습니다. 센서/장애물 오류 정지와 STOP은 유지합니다.</p></section>
+<script type="module" src="/static/experiment_setup.js"></script></html>

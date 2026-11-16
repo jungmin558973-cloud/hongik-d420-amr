@@ -13,12 +13,12 @@
   <div class="topnav"><span class="nav-active">시나리오 실험</span><span>D420 · 실내 이송 로봇</span></div>
   <div class="connection"><i id="link-dot"></i><span id="link-label">화면 연결 중</span><span class="version">LAB / 01</span><button id="quick-stop" class="quick-stop" aria-label="즉시 시험 중지">■ 정지</button></div>
 </header>
-<main>
+<a href="/experiment-setup" target="_blank" rel="noopener" style="display:block;padding:18px;font-size:20px;font-weight:bold">실험 세팅 열기 · 160cm 정지 / S-curve 0~100% ↗</a><main>
   <section class="intro"><div><div class="eyebrow">ROBOT & TRAY CONTROL</div><h1>주행·트레이 제어실<span>텔레옵 · 속도 조절 · 트레이 3모드</span></h1></div>
     <div class="mode-controls"><div class="segmented" role="group" aria-label="실행 모드"><button id="preview-mode" class="selected" aria-pressed="true">3D 미리보기</button><button id="real-mode" aria-pressed="false">실차 시험</button></div><button id="reset-course" class="outline" title="정지한 현재 위치와 방향을 출발선으로 등록">출발선 설정</button><button id="connect" class="outline">실차 연결 준비 <span>↗</span></button></div>
   </section>
   <div id="notice" class="notice" role="status"><span class="notice-icon">i</span><span id="notice-text">3D 미리보기 모드입니다. 로봇으로 명령을 보내지 않습니다.</span></div>
-  <div class="drive-switch" role="group" aria-label="주행 방식"><button data-drive="scenario" class="selected" aria-pressed="true">01 시나리오 주행</button><button data-drive="teleop" aria-pressed="false">02 텔레옵 수동 조종</button><button data-drive="follow" aria-pressed="false">03 사람 따라가기</button><a href="/navigation">04 지도 · 지점 이동 ↗</a><span>환경: 3D 미리보기 / 실차 시험은 위에서 선택</span></div>
+  <div class="drive-switch" role="group" aria-label="주행 방식"><button data-drive="scenario" class="selected" aria-pressed="true">01 시나리오 주행</button><button data-drive="teleop" aria-pressed="false">02 텔레옵 수동 조종</button><button data-drive="follow" aria-pressed="false">03 사람 따라가기</button><a href="/navigation">04 지도 · 지점 이동 ↗</a><a href="/experiments" target="_blank" rel="noopener">05 실험 기록 ↗</a><span>환경: 3D 미리보기 / 실차 시험은 위에서 선택</span></div>
   <div class="workspace">
     <aside class="scenario-panel" id="scenario-controls">
       <div class="section-title">시나리오 선택 <span>01 — 03</span></div>
@@ -84,7 +84,7 @@
         <section class="camera-panel"><div class="media-heading"><strong>RealSense RGB</strong><span id="camera-status">미연결</span><button id="camera-enlarge" type="button">카메라 크게 보기</button></div><div class="camera-screen"><img id="camera-image" alt="Jetson RealSense 실시간 RGB 영상" hidden><svg id="follow-boxes" aria-label="최근 YOLO 사람 검출 영역" hidden></svg><div id="camera-placeholder"><span>◉</span><strong>실차 카메라 연결 대기</strong><small>실차 연결 준비를 누르면 실제 영상이 표시됩니다.</small></div></div></section>
         <section class="lidar-panel"><div class="media-heading"><strong>라이다 SLAM 지도</strong><span id="map-status">/map 대기</span></div><canvas id="lidar-map" aria-label="실제 SLAM 지도와 현재 차체 위치"></canvas><p id="map-placeholder">실차 연결 후 현재 위치와 주변 지도를 수신합니다.</p></section>
       </div>
-      <section class="tray-panel">
+      <section class="tray-panel" id="tray-sensors">
         <div class="media-heading"><strong>트레이 BNO055 · 영점 대비 실측</strong><span id="tray-link">ESP32 미연결</span></div>
         <div class="tray-connection"><select id="tray-port" aria-label="Jetson에 연결한 ESP32 USB 장치"><option value="">장치 목록을 먼저 확인하세요</option></select><button id="tray-list">USB 목록</button><button id="tray-connect">ESP32 연결</button></div>
         <div class="tray-readings"><div><span>Roll</span><strong id="tray-roll">—</strong></div><div><span>Pitch</span><strong id="tray-pitch">—</strong></div><div><span>제어 모드</span><strong id="tray-mode">미연결</strong></div><div><span>영점 / 방향</span><strong id="tray-checks">— / —</strong></div></div>

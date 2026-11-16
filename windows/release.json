@@ -1,13 +1,21 @@
 {
-  "version": "2026-11-16-L-BRAKE",
+  "version": "2026-11-16-09-SETUP",
   "product": "HONGIK CAFE Windows client",
   "target": "Windows PowerShell 5.1 / OpenSSH client / Edge or Chrome",
   "architecture": "Windows launcher + SSH loopback tunnel + Jetson-hosted app and ROS",
   "jetson": "seo@192.168.0.47",
-  "jetson_payload_files": 127,
+  "jetson_payload_files": 153,
   "jetson_payload_source": {
-    "depth_route.py": "703ace9afd08abc91287e65fcbb2ccf6929fa582ae10a5b8d06ca6041b532264",
+    "CURRENT_STATUS_20261116.md": "afb4ae2dee2a50b5895fa615c6fcfed76ad07e93e0d8a2fad0728ae2298c8c5f",
+    "depth_route.py": "fc733af8745f6d22fd4d5eedd5a0bf8fe940908e43737f4d1dc89bb2834330c6",
     "engine.py": "6087102dd2fa0290c7df1fbc0bf1520f08f4022468c4d0c06c65acc61d890349",
+    "EXPERIMENT_15_CASES_20261116.md": "414ad76375f91865d4a561907e114a0e93cd9364745194621e08786de30ab4e3",
+    "experiment_cases.py": "0b35df2b271d0c6940f13c01249d694165bebb47e5bcdf3a9625ce4ba43ca23f",
+    "experiment_options.py": "b79c62d19eadc81cbefe2557fe4d9aee6091ab02a623ac16ea9c511bafa2977c",
+    "EXPERIMENT_SETUP_20261116.md": "a8811b943e347a0fbb325e4750541a31030d055af4d33e2dc00dc3dd04ea1614",
+    "EXPERIMENT_SETUP_UI.png": "6ca8319761578c4db73b3bb6e055906c3b5e4a9bd7fa5d35a779c1b3f3eb28ee",
+    "experiment_store.py": "2448b828f78f75e3cd4246c2a8f12aabbb2ffba3d876567c698a62889098442d",
+    "EXPERIMENTS_UI.png": "1ff2675c23b42ea3f0e381f390aa135bb47784c933935bfe21c7e11d4b6f5585",
     "firmware/build.sh": "93dac1a5cd318b077920a618892644ba1c01d176d803d45c80bd99102f318bc2",
     "firmware/build_manifest.json": "3d1c8ff1589d695b60d91ca7e903142d7a9cd869937eac5cc8fe1c256dff1758",
     "firmware/esp32_app_control/esp32_app_control.ino": "c16175eda1a6bdd6c1d7ad35e793da024ba5d242ddced96ed5c4a2fdd28f2304",
@@ -26,7 +34,7 @@
     "jetson/depth_start.sh": "78bc7d4ec8ffdc3efbc18ca76b665fcc7fe61663925bea87646180fc95d7f514",
     "jetson/follow_session.sh": "92cc7597a76b608792461c9393058f6744b17e569be56e9b334754c1e43a7f03",
     "jetson/follow_start.sh": "fafc796bfec069a5ab7120ffe8494f25757f4280a97f1c2a8b9864ac3742c353",
-    "jetson/local_route_host.py": "b1550833a3983fb3d28d08225d23f1d85cad8dcf1af627546422e54bf1c30919",
+    "jetson/local_route_host.py": "d2e2fe5f90afa59178ebf2a96e20421f0e76c0193be1aff753bfa3dff2301217",
     "jetson/mapping_bridge.py": "70502a96792a18a7073ae5f056abb2f3dd8417b6025cad648847dd45fe610a15",
     "jetson/mapping_odometry.py": "cba45fbaa3de647b29bd673351a0ad93c3c7f8c1ca00a085bb461ce2ab61554c",
     "jetson/navigation/mapless_config.py": "d6d371630cd29dda357ddc78b6dc0c7508a00733af63fd848c20f7f936255891",
@@ -41,17 +49,19 @@
     "jetson/preflight.py": "2c4376aabde7fcd3239c55f5528533016b1b8a1ecbace1a87c9b630c4ca108fe",
     "jetson/restore_checkpoint.py": "b30964d2b258f98ad0034972c932a99a5173f22eaf5aec06e6ba22cc0e9beb73",
     "jetson/robot.launch.py": "79fbd22530851e8693e3c5260febb531b9e21c8ee45adb63dd8752b2425be1bc",
+    "jetson/route_tray_link.py": "205024dc643f0e4bd022bc36a3ac05658b9ff9a86ca16467931f1d456a9014de",
     "jetson/serial_bridge.py": "30b6211e035c98eb9de2673ca0c678abd52ee56cd21799f6e1d1fe8c6a0dc68b",
     "jetson/slam.yaml": "16ced5e04f8518e73c42980c8b19ebac7fa68a0030df393607c46010a8254ed3",
     "jetson/start.sh": "1966060d66f0e21b7ebf32ef885c3785ea2447c41554c92bdc28f55dca9a7c6b",
-    "jetson/tray_monitor.py": "48af44367892e461c64e6eeb74681ce859d2eec91181e2d6f6c79dd3d78ecddc",
+    "jetson/tray_monitor.py": "625d8a7edcfacdd320c814b51e2b7a2b57e04978642cf36e01a7aa26fbffcd73",
     "jetson/tray_ports.py": "4e9ac1e7b3f4cc426901372d362ba13a3a91655c364b56cbabe024a049d5237a",
-    "jetson/tray_protocol.py": "616a8d0b13d159558885a17fb54a62b8b0835f06007e6a6e32f3b5d93da03165",
+    "jetson/tray_protocol.py": "1a5899e3a2199576ed58464640f40d03a7dfaf8972cd620214f3bcbb567f0acb",
     "jetson/tray_session.sh": "dbca1e85ac38506b6d860630add2464b5ed7333e53d7ba799bcaa3e14f154d69",
     "jetson/yolo_runtime.py": "e3587a5d9adcfed781fdece95440bbc27a02389a470f0713878230ada589e161",
+    "L_ROUTE_DATABASE_20261116.md": "4a360c3a8d2c377e1dadf620c0dbfaef874a4f60e24ba0e031472ef8ce1e3cf4",
     "L_TEST_20261116.md": "89241c9dbb4a7c24be811cabd14e7ab9599fa45b4fa283fd6b7065009df13bd6",
-    "L_TEST_UI.png": "ce1b74d1e3e39070c486cd6fedcd3defb04f70102f3934b82ece8226532a74f4",
-    "map_workspace.py": "82e3767ac3b3da05ad9d08e98c5b2f6e9010f9c87cad43b15609b8f2f18d4196",
+    "L_TEST_UI.png": "4c45a303bcca1d80c8182c88f6aff06891023412957fcb3a8ed608c1facf5745",
+    "map_workspace.py": "2ec7ee75d58bdf6790237e2bfee44e4a10af8d5775ff190e969fbdec60e3a179",
     "MAPPING_NAVIGATION.md": "87a00b83f4f2d6fb7293c6cac4c74ca31245b048043003339b741e07a2d4f9ad",
     "media.py": "dcc5acdc61acb3203e9c5fb2e5cfb278a433280f167cbfcb8845882e29e62e65",
     "navigation.py": "1e1e7734075c87b512516494099bcd921c1d9e577b472e80dc69249d86c1fc1d",
@@ -62,35 +72,51 @@
     "prepare_follow.sh": "2fafcbdbeb9ad5b408ffee57b6f285b22158b8fed11bbbdf9be9ec45dfb43252",
     "prepare_local.sh": "157983e02cd3769aa2b2355581d22efb6b73622020841a2b8ddd12db7e7dc36b",
     "prepare_robot.sh": "c10dd7ccfd3cfecaad2c3eab7c30911043d2bda332570bd27a00724d24565fb2",
-    "README.md": "572707633d0d931f68f109341c3cad6a18c8ca00786d07b385614f7d5337a839",
-    "remote_depth_route.py": "ab7c8cbf2fcb27726d2bcb2e6649040d75e3bbc834cedf9d3dd4430611fada69",
+    "README.md": "17ffa734fcbbc641000ab3779730c979533226e53dbe02b354633bf108cd3283",
+    "release_info.py": "5134a2e3360a4b6d975e0d7004a7662018938e4dd8930665b1598eb150d1c115",
+    "remote_depth_route.py": "3e43ebdfb6f0c58b1046b51758af1a7d3dfc78cb7bcb029415db61cd3b152500",
     "robot_runtime.py": "a40514f097f0fb347a4d3e5eae1e2e844c852b61fc52333c4a3ec582a97c63fd",
     "ros_io.py": "c5fcb6c94be834d723bea77a52461bb02013c04a3b527f15266eea4098acb5d8",
     "ros_navigation.py": "83dcb993727ad07f26ab541f242646ef167ea14cf18e1952f7c4d5552b2e1c45",
+    "route_prediction.py": "6bc87ad33a84599e5326006cd2c6301ad45872cccf46b6b5f550ca5c0f05ce82",
     "rviz_desktop.py": "78fddb90c90526e4a77e88afdce53aafb96a6ac9539aadc0b94b96b148be985c",
     "rviz_mapping.rviz": "6d9260cfc6e4acc3fc41ed8a74484b4847c689562e115834ef395a76acf2cb3c",
     "rviz_start.sh": "592d463551208c41547ecf4d5caec53686e4f3f6d65435f0463a6d9d6e759153",
     "rviz_view.py": "5af398c25967e1418f3268b6e7279e24e6d50e678740dae13756831b30bc3658",
-    "server.py": "98d4cc3491e57e02408911b723537bdb39f2c4126a47df6dfb9b9d15b61cf4d9",
+    "server.py": "e4a75a7e992b3e8deabf527288ffb2e55324bb47db188851b3aa9ef9ad272fcd",
+    "smooth_stop.py": "c01fa21987161c5e00ef9d6f7ac8c9a5fc4f5c68c7a4c38107214704f6a0640d",
     "start.sh": "573a3d6f9fa9d2db7633ac7cbecf87de2cf1d3a1338bb9bd7de875c900671cff",
     "team_access/install_jetson.sh": "2f980980256d17affa9006e71360e66635c30e8e10137d5eb1d0bafd09718075",
     "team_access/systemd/hongik-depth-observer.service": "f22a3b9c4d22d4293a6718d68db332272b2f4b885554f633443d48864e856733",
     "team_access/systemd/hongik-scenarios.service": "0361351455e55a3ba05996a9ab031867034d0989c48d761ced7724fa9e424e8a",
     "team_access/systemd/hongik-team-ui.service": "a8b2d6cd71318f25347dcc1c94810c80c78d658360e2b1017a253d4fbc41a3b4",
-    "tests/browser_smoke.cjs": "87a9b1a1f9414645688d473cc929848a26c176e083d8c80790ee4cb274ee4855",
-    "tests/test_l_route.py": "be9286754272ed339098df0353a6933c07004f556ad75f0a8363aa2a4e11121e",
+    "tests/browser_smoke.cjs": "fc0bc7f76bcd695943645543289724e2d169ae01d1bc78923ddfbdd2390c8a20",
+    "tests/local_mission_fixture.json": "6c2ba8d3ded3a1433b8f229965f0e8b5181f195b1c05a774f6d9a274b3962677",
+    "tests/test_experiment_cases.py": "5fff21ef4cb21c35135782c23458dccbbf084732c7a6f4388340ace9356fc225",
+    "tests/test_experiment_setup.py": "783de171ac1e3fed3dfcaf1c1009268b93a586e466bd5351fe75cc3d3b69436f",
+    "tests/test_experiment_store.py": "1b76df4ac0896e2719671002e05674f9419e37536a7cd6a2386f9d6a89bff8fe",
+    "tests/test_http_prediction.py": "d7c9580eca967ffeb9a41ed472f57ea42760896094127f83f6459d62ff624fa5",
+    "tests/test_l_route.py": "bdceadcd57dadc73d344dafef1d22d49a1b41aaab3617f7e0317d485ec711244",
+    "tests/test_route_deadband.py": "2899804b64f8c455772b60bec183867cf5a2d71b1ecb29a95a34db49a942f249",
+    "tests/test_route_prediction.py": "afc4181aa868e1adec182ca45cc04fc3026df7b295adfaaa77dd4001255faaf6",
     "VALIDATION.md": "f242b169526c7f49ba1497bc28eb0f7c749c40ddb7ee142ee49a99a26597b53f",
-    "web/app.js": "5b17c2b20ca5d17c10590fbe0bd6addc480e6331619bdb8ac9c60a0a0cf69e89",
+    "web/app.js": "8b4127b0b242994919c9c4ca6cc1311e9ef6f91270ca3caa91f52df6f1a5fc3b",
     "web/assets/d420_chassis_ros_m.stl": "9c8a5998e014ea99309891e480d54a4f8a85a9359c0388e78e7ce4dd78998c8c",
     "web/assets/d420_v4_bracket_ros_m.stl": "6bdc8e65f8c2ddec097a32ce5955df252eacf84909574f0066a22991414d3cfe",
     "web/assets/d420_wheels_ros_m.stl": "859d6979cd85eb585376050b3c19a1c2a1a35bb4670c4d188ce575e4a7c9396e",
     "web/assets/hill_reference.jpg": "35f23df79469f25d821948f53c3fd2dd00a80d8c57c338aaf46c2dbb5a782af4",
+    "web/experiment_matrix.js": "68eb6b623761f814a84f0afe4a165820e7b047cad522a6ad93f15e4bcf19bade",
+    "web/experiment_setup.html": "0c6ff4555aa8b473c2555791ce2235303ed06d920ee7af4b96efa838d0bd2fc0",
+    "web/experiment_setup.js": "14eb926cc8c84e57c9a5f4be26ec20e5a655da76c1f3c7a8a7aba543352dd84b",
+    "web/experiments.html": "b3d61d9cce903ba86834cadc1c1cfd5f2d06ad7dbdbc1f95e13cb0abb8a43955",
+    "web/experiments.js": "ea6d46a337a0facce8df1f115dc511202fcd7c0ef5e9b7da803e139d553984e3",
     "web/icon.svg": "57d53dfa70a38c98ebe7c9a6acc38f70704ae332e3b7866a0515a55d9a9bfb43",
-    "web/index.html": "63c23b23f352b830e53af9b37b61432517224d2962f7b7d9e6e7c1751fb695a4",
-    "web/navigation.css": "8f7f33eb2ed334c89fd7b5a4577ef0c6d64189312e467d20498c9ae4be928997",
-    "web/navigation.html": "4203288aeeaf171123760ad0fe456d302c2188ef5f12fc7debef9b9bf7a07ae6",
-    "web/navigation.js": "5a55508aec021390ac1e72c6342986bfc4f892eea2a53d832002ba9f0a4a71fb",
+    "web/index.html": "14349566235ace5de289d93d349a42dc6ef159305644a52898d12879a97c93d0",
+    "web/navigation.css": "4bf366824233afe2cc8a5d46464da8e6238ef7352ac93f334e45554c5c7f2024",
+    "web/navigation.html": "e01e4c6906c95c324cc63a3f8779166dbac82c6f16fa446738000bfc1ba49c55",
+    "web/navigation.js": "6026f31d2dcc7cc7967d82a1a3afa2f5172ff1ab372411d075a6a30600cf7732",
     "web/rviz.js": "36970c37a1c2119a09fc3807906610003fc086872cc520e74821eb6e723aaf6c",
+    "web/stop_notice.js": "3c9b5b52e47bfe9a200cc40c492d2e11b43a7f4e3ef2c0287969b461a7049ade",
     "web/style.css": "601ad8580f5ef7810697e284a4dc28002e96e803149d5c21cd84d2e39a19f3fb",
     "web/vendor/novnc/COPYRIGHT": "22f8436d284ebbc1cc1d7997f175b91054a4c1931d8d479cdf84785b19369e4a",
     "web/vendor/novnc/core/base64.js": "8826f55e477c61fa6df1e7625dbd57a05e34d967bd06916304fcf5c699c5cb69",
@@ -134,7 +160,7 @@
     "web/vendor/three.core.js": "eb077d2417f61d3e6d9264c317cabc4ea35769ed6b0ab533067292a550784c20",
     "web/vendor/three.module.js": "c8211c69345d2e9949dc7a8ac969380497aa0600a5a8ac6a459c8cd02dd9cb8a"
   },
-  "hardware_test": "NOT DEPLOYED OR HARDWARE TESTED; see L_TEST_20261116.md",
+  "hardware_test": "NOT DEPLOYED OR HARDWARE TESTED; see EXPERIMENT_SETUP_20261116.md",
   "files": {
     "connection.json": {
       "bytes": 53,
@@ -144,9 +170,21 @@
       "bytes": 4877,
       "sha256": "b4c1774b8bcfd5293fef71ab5b518c47a2c9c77def68fe1a952da91edd56d46f"
     },
+    "CURRENT_STATUS_20261116.md": {
+      "bytes": 7622,
+      "sha256": "afb4ae2dee2a50b5895fa615c6fcfed76ad07e93e0d8a2fad0728ae2298c8c5f"
+    },
+    "EXPERIMENT_15_CASES_20261116.md": {
+      "bytes": 8870,
+      "sha256": "414ad76375f91865d4a561907e114a0e93cd9364745194621e08786de30ab4e3"
+    },
+    "EXPERIMENT_SETUP_20261116.md": {
+      "bytes": 4388,
+      "sha256": "a8811b943e347a0fbb325e4750541a31030d055af4d33e2dc00dc3dd04ea1614"
+    },
     "hongik-team-app.tar.gz": {
-      "bytes": 2267894,
-      "sha256": "652d11a75ffa35d63eadf9b7ae23024c34b0c219a590100c0108c2a7da2b47c9"
+      "bytes": 2503858,
+      "sha256": "da2c10e02fcd8c78565e02c91e43f3040e59bb127ec8e95a95964e570f16ef26"
     },
     "Install-HongikCafe.cmd": {
       "bytes": 103,
@@ -159,6 +197,10 @@
     "jetson_known_hosts": {
       "bytes": 100,
       "sha256": "d824d8a2cc7ea6337bcf0e1c6cd3b5f272763bf8211cba469551ff833dd77228"
+    },
+    "L_ROUTE_DATABASE_20261116.md": {
+      "bytes": 9068,
+      "sha256": "4a360c3a8d2c377e1dadf620c0dbfaef874a4f60e24ba0e031472ef8ce1e3cf4"
     },
     "L_TEST_20261116.md": {
       "bytes": 4185,
@@ -177,12 +219,24 @@
       "sha256": "b3f397828a2fa75e01491054ece3d647632b70a16ddc3183c9afbdb001d5058f"
     },
     "README.txt": {
-      "bytes": 5814,
-      "sha256": "cb629158c439ef366e0f81ca57bb8071d86342cc9ef6224c27bc19877030fde7"
+      "bytes": 6217,
+      "sha256": "b30554ee923f82c851dc46899bf050a78de5c5b8d5b9cd7d12cab274eddf1c61"
     },
     "README_L_TEST.txt": {
       "bytes": 1831,
       "sha256": "bb89961cf09a54959ec21fdc19a518e4b62602d7331f50add4765c83791fc260"
+    },
+    "README_LEVEL_L.txt": {
+      "bytes": 2317,
+      "sha256": "0365a21309e108089bfb27b00ab69bb2c7b201c7bf18951adf3ae9135335fe07"
+    },
+    "reference/d420_core.py": {
+      "bytes": 4711,
+      "sha256": "7092c635ce6c9c53a0bead94c50cdb93b3545fabf88ece09cd6349dddbed5454"
+    },
+    "reference/serial_bridge.py": {
+      "bytes": 9051,
+      "sha256": "30b6211e035c98eb9de2673ca0c678abd52ee56cd21799f6e1d1fe8c6a0dc68b"
     },
     "Setup-Jetson.cmd": {
       "bytes": 92,
@@ -196,5 +250,6 @@
       "bytes": 4694,
       "sha256": "38eae821994157bccdfca1847a625d0576f67422af370576a2e865a41e3a4bb5"
     }
-  }
+  },
+  "validation": "49 unit/API tests including 15 condition routes; 1 Edge browser test; firmware unchanged"
 }

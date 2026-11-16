@@ -3,7 +3,7 @@ import math
 import re
 import time
 
-COMMANDS = {'1','2','g','v','h','x','s','u','i','Q','W','E','R'}
+COMMANDS = {'1','2','g','v','h','x','z','s','u','i','Q','W','E','R'}
 BOUNDARY = '-------------------------'
 
 
@@ -103,12 +103,13 @@ def check_command(command,status):
     if not status.get('connected'): raise ValueError('최신 ESP32 상태를 먼저 수신해야 합니다.')
     if predictive and status.get('protocol')!=2:
         raise ValueError('예측 모드는 앱용 ESP32 펌웨어(PROTO=2) 업로드가 필요합니다.')
-    if (command in {'g','h'} or predictive) and not (status.get('roll_enabled') and status.get('pitch_enabled') and status.get('imu_fresh')):
+    if (command in {'g','h','z'} or predictive) and not (status.get('roll_enabled') and status.get('pitch_enabled') and status.get('imu_fresh')):
         raise ValueError('두 서보 활성화와 정상 IMU 데이터가 필요합니다.')
     if command=='v' and not (status.get('zero_saved') and status.get('imu_fresh')):
         raise ValueError('수평 영점을 먼저 저장해 주세요.')
-    if (command=='h' or predictive) and not (status.get('zero_saved') and status.get('direction_checked')):
+    if (command in {'h','z'} or predictive) and not (status.get('zero_saved') and status.get('direction_checked')):
         raise ValueError('영점 저장과 실제 보정 방향 확인을 먼저 완료해 주세요.')
+    if command=='z' and status.get('mode')!=0:raise ValueError('PWM 고정 모드에서만 영점 홈으로 복귀할 수 있습니다.')
     if command in {'Q','W','E','R'}:
         if status.get('mode')!=0:raise ValueError('실행 안함(PWM 유지)으로 바꾼 뒤 미세 조정해 주세요.')
         if not status.get('roll_enabled' if command in {'Q','W'} else 'pitch_enabled'):
@@ -121,6 +122,8 @@ class TraySession:
         self.port=port;self.identity=identity or {};self.parser=StatusParser()
         self.latest={};self.last_frame=0.;self.last_poll=0.;self.pending=[];self.seen=[]
         self.error='ESP32 상태 대기';self.last_request={};self.target=None
+        import secrets
+        self.monitor_session=secrets.token_hex(8);self.frame_sequence=0
 
     def status(self,now=None,wall=None):
         now=time.monotonic() if now is None else now
@@ -128,6 +131,8 @@ class TraySession:
         age=now-self.last_frame if self.last_frame else None
         return {**self.latest,'connected':bool(self.port.is_open and age is not None and age<1.5),
                 'status_age_s':age,'stamp_unix':wall,'identity':self.identity,
+                'monitor_session':self.monitor_session,'frame_sequence':self.frame_sequence,
+                'sample_unix':wall-age if age is not None else None,
                 'port':getattr(self.port,'port',''),'error':self.error,'last_request':self.last_request}
 
     def request(self,request,now=None,wall=None):
@@ -150,7 +155,7 @@ class TraySession:
         now=time.monotonic() if now is None else now
         wall=time.time() if wall is None else wall
         for frame in self.parser.feed(self.port.read(min(self.port.in_waiting,4096))):
-            self.latest=frame;self.last_frame=now;self.error=''
+            self.latest=frame;self.last_frame=now;self.error='';self.frame_sequence+=1
         if self.pending:
             command,issued,nonce=self.pending.pop(0)
             if wall-issued<=.75:

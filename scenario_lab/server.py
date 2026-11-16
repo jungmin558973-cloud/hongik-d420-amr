@@ -20,7 +20,12 @@ from aiohttp import web
 from engine import Config, Engine, Pose
 from operator_control import Teleop, Predictor, PredictionConfig
 from depth_route import DepthRoute,valid_depth
+from route_prediction import RoutePredictionConfig
 from remote_depth_route import RemoteDepthRoute
+from experiment_store import ExperimentRecorder,SampleBuilder,read_experiments,FIELDS
+from release_info import RELEASE
+from experiment_cases import CASES,SPEEDS,parse_case
+from experiment_options import parse_options
 from robot_runtime import local_robot,command as robot_command
 from person_follow import Follow, valid_observation
 from follow_clearance import limit_command
@@ -69,6 +74,42 @@ class Lab:
         self.follow_data = {'ready':False,'reason':'YOLO 검출기를 준비해 주세요.'}
         self.follow_preparing = False
         self.mapping_mode = False
+        self.recorder=None;self.record_id=None;self.record_engine=None;self.record_seq=0;self.sample_builder=SampleBuilder()
+
+    async def prepare_recording(self):
+        if self.recorder is None:self.recorder=ExperimentRecorder(self.run_dir/'experiments.sqlite3',owner='web-experiments')
+        for _ in range(40):
+            if self.recorder.ready or self.recorder.error:break
+            await asyncio.sleep(.05)
+        if not self.recorder.status()['ready']:raise ValueError('실험 DB 준비 실패: '+self.recorder.error)
+
+    def record_experiment(self,now):
+        e=self.engine
+        if isinstance(e,RemoteDepthRoute):
+            if self.record_id:
+                try:self.recorder.finish(self.record_id,self.record_engine.snapshot(now))
+                except ValueError:pass
+                self.record_id=None
+            return  # Sole record owner is the Jetson motor process.
+        if self.recorder is None:return
+        try:
+            if self.record_id and self.record_engine is not e:
+                self.recorder.finish(self.record_id,self.record_engine.snapshot(now));self.record_id=None
+            if not self.record_id and e.active:
+                self.record_id=self.recorder.begin(e.kind,e.mode,{'software_release':RELEASE,'config':asdict(e.config),'tray_control':self.tray_modes[e.mode],
+                    'prediction_config':asdict(self.prediction_configs[e.mode])},wall=time.time()-(now-e.started))
+                self.record_engine=e;self.record_seq=0;self.sample_builder=SampleBuilder()
+            if self.record_id:
+                prediction=self.predictors[e.mode]
+                snapshot=e.snapshot(now);snapshot.pop('chart',None)
+                row=self.sample_builder.build(now,time.time(),now-e.started,e.state,e.command,e.pose,
+                    self.tray_data if e.mode=='real' else {},
+                    dict(roll_deg=prediction.roll,pitch_deg=prediction.pitch) if self.tray_modes[e.mode]!='OFF' else {},live=e.mode=='preview' or not self.live_reason,
+                    simulated=e.mode=='preview',route=snapshot)
+                self.record_seq+=1;self.recorder.sample(self.record_id,self.record_seq,row)
+                if not e.active:self.recorder.finish(self.record_id,e.snapshot(now));self.record_id=None
+        except (ValueError,TypeError) as exc:
+            if e.active:self.stop('실험 DB 기록 오류: '+str(exc))
 
     async def prepare_follow(self):
         if not self.allow_real or self.robot is None:
@@ -112,6 +153,45 @@ class Lab:
         target_mode=self.tray_data.get('predictive_mode',5) if self.tray_data.get('protocol')==2 else None
         if self.tray_data.get('mode') not in (4,target_mode):raise ValueError('ESP32의 수평 유지 상태 수신을 기다려 주세요.')
         if self.tray_modes['real']=='PREDICTIVE':check_command(prediction_command(0,0),self.tray_data)
+
+    async def prepare_route_level(self):
+        """Explicit L-route button selects LEVEL; never enables motors, saves zero or confirms signs."""
+        if not self.robot:raise ValueError('실차와 ESP32를 먼저 연결하세요.')
+        epoch=self.stop_epoch;self.tray_data=self.robot.tray()
+        check_command('h',self.tray_data)
+        angles=[self.tray_data.get('roll_deg'),self.tray_data.get('pitch_deg')]
+        if any(type(v) not in (int,float) or not math.isfinite(v) or abs(v)>10 for v in angles):raise ValueError('트레이가 기준에서 크게 기울어져 있습니다. 먼저 실제 자세·영점을 확인하세요.')
+        if self.tray_data.get('mode')!=4:self.robot.send_tray('h')
+        deadline=time.monotonic()+4.;stable_since=None
+        while time.monotonic()<deadline:
+            if self.stop_epoch!=epoch:raise ValueError('주행 시작이 취소됐습니다.')
+            self.tray_data=self.robot.tray();check_command('h',self.tray_data)
+            angles=[self.tray_data.get('roll_deg'),self.tray_data.get('pitch_deg')]
+            settled=self.tray_data.get('mode')==4 and all(type(v) in (int,float) and math.isfinite(v) and abs(v)<=1. for v in angles)
+            if settled:
+                if stable_since is None:stable_since=time.monotonic()
+                if time.monotonic()-stable_since>=.25:
+                    self.tray_modes['real']='LEVEL';self.tray_configured['real']=True;return
+            else:stable_since=None
+            await asyncio.sleep(.05)
+        raise ValueError('ESP32 수평 유지 확인 시간 초과 · 차체는 출발하지 않았습니다.')
+
+    async def prepare_route_fixed(self):
+        epoch=self.stop_epoch;self.tray_data=self.robot.tray();check_command('h',self.tray_data)
+        if self.tray_data.get('mode')!=0:self.robot.send_tray('x')
+        deadline=time.monotonic()+3.;centered=False;stable_since=None
+        while time.monotonic()<deadline:
+            if self.stop_epoch!=epoch:raise ValueError('주행 시작이 취소됐습니다.')
+            self.tray_data=self.robot.tray();check_command('h',self.tray_data)
+            if self.tray_data.get('mode')==0:
+                if not centered:self.robot.send_tray('z');centered=True;await asyncio.sleep(.05);continue
+                home=all(type(self.tray_data.get(k)) in (int,float) and abs(self.tray_data[k]-self.tray_data.get(h,-10000))<=2 for k,h in [('roll_pwm','roll_home'),('pitch_pwm','pitch_home')])
+                if home:
+                    if stable_since is None:stable_since=time.monotonic()
+                    if time.monotonic()-stable_since>=.25:self.tray_modes['real']='OFF';self.tray_configured['real']=True;return
+                else:stable_since=None
+            await asyncio.sleep(.05)
+        raise ValueError('ESP32 무보정 PWM 고정 모드 확인 시간 초과')
 
     def end_prediction(self):
         if self.prediction_streamed and self.robot:
@@ -248,8 +328,11 @@ class Lab:
 
     def status(self):
         state = self.engine.snapshot(time.monotonic())
+        state['software_release']=RELEASE
         depth=self.robot.depth() if self.robot and hasattr(self.robot,'depth') else {'ready':False,'reason':'깊이 관측 대기'}
         state['depth_route']={k:v for k,v in depth.items() if k!='points'}
+        if not isinstance(self.engine,RemoteDepthRoute):
+            state['recording']={**(self.recorder.status() if self.recorder else {}),'run_id':self.record_id,'samples':self.record_seq}
         state.update({'allow_real': self.allow_real, 'connecting': self.connecting,
                       'connected': self.robot is not None, 'ready': self.robot is not None and not self.live_reason,
                       'connection_message': self.connection_message, 'sensor_reason': self.live_reason,
@@ -266,6 +349,10 @@ class Lab:
             'source':'주행 명령·입력 코스 모델 / RealSense 깊이 미사용',
             'streaming':mode=='real' and self.prediction_streamed,
             'error':self.tray_control_error if mode=='real' else ''} for mode in self.tray_modes}
+        if isinstance(self.engine,RemoteDepthRoute):
+            local=(self.engine.remote or {}).get('tray_prediction',{})
+            if local.get('enabled'):
+                state['tray_controls']['real'].update(mode='PREDICTIVE',roll_target_deg=local.get('roll_deg',0),pitch_target_deg=local.get('pitch_deg',0),source='Jetson L자 계획·속도 모델 / 차량 가속도 IMU 미사용',streaming=self.engine.active)
         return state
 
     def save_run(self):
@@ -374,7 +461,9 @@ class Lab:
                     elif now < self.stop_until:
                         self.robot.publish(0, 0)
                 control_mode=self.engine.mode
-                if self.tray_modes[control_mode]=='PREDICTIVE':
+                if isinstance(self.engine,RemoteDepthRoute):
+                    pass  # The Jetson-local adapter owns L-route tray feedforward.
+                elif self.tray_modes[control_mode]=='PREDICTIVE':
                     roll,pitch=self.predictors[control_mode].step(self.engine,now,dt,self.prediction_configs[control_mode])
                     if self.engine.active and control_mode=='real' and self.robot:
                         try:
@@ -392,9 +481,14 @@ class Lab:
                                tray_zero_saved=tray.get('zero_saved'))
                 if len(self.engine.history)>previous_sample_count:
                     control=self.predictors[control_mode]
-                    self.engine.history[-1].update(tray_control=self.tray_modes[control_mode],
-                        tray_target_roll_deg=control.roll,tray_target_pitch_deg=control.pitch,
-                        prediction_source='COMMAND_COURSE_MODEL_NOT_DEPTH')
+                    if isinstance(self.engine,RemoteDepthRoute):
+                        local=(self.engine.remote or {}).get('tray_prediction',{})
+                        self.engine.history[-1].update(tray_control='PREDICTIVE_LOCAL' if local.get('enabled') else self.tray_modes[control_mode],tray_target_roll_deg=local.get('roll_deg',0),tray_target_pitch_deg=local.get('pitch_deg',0),prediction_source=local.get('source','LEVEL'),vehicle_imu_used=False,brake_eta_s=local.get('brake_eta_s'),model_acceleration_m_s2=local.get('model_acceleration_m_s2'))
+                    else:
+                        self.engine.history[-1].update(tray_control=self.tray_modes[control_mode],
+                            tray_target_roll_deg=control.roll,tray_target_pitch_deg=control.pitch,
+                            prediction_source='COMMAND_COURSE_MODEL_NOT_DEPTH')
+                self.record_experiment(now)
                 if was_active and not self.engine.active:
                     if isinstance(self.engine,Navigation) and self.robot and getattr(self.robot,'nav',None):
                         self.robot.nav.cancel()
@@ -414,7 +508,12 @@ class Lab:
         except asyncio.CancelledError:
             pass
         finally:
-            self.stop('서버 종료')
+            # The web UI is an observer once Jetson has accepted the local route.
+            # Its restart must not cancel an already accepted autonomous mission.
+            if not (isinstance(self.engine,RemoteDepthRoute) and self.engine.active and not self.pending_local_route):
+                self.stop('서버 종료')
+            self.record_experiment(time.monotonic())
+            if self.recorder:await asyncio.to_thread(self.recorder.close)
             if self.robot:
                 await asyncio.to_thread(self.robot.close)
 
@@ -485,7 +584,18 @@ def create_app(allow_real=False):
                 config = Config.parse(data.get('config', {}),max_speed=Teleop.MAX_SPEED if kind=='teleop-start' else DepthRoute.MAX_SPEED if kind=='depth-route-start' else .30)
                 if kind=='depth-route-start':
                     if mode!='real':raise ValueError('깊이 경로는 실차 모드 전용입니다.')
-                    if lab.tray_modes['real']=='PREDICTIVE':raise ValueError('깊이 경로는 트레이 실행 안함/수평 유지로 사용해 주세요.')
+                    extra=data.get('turn_extension',0.)
+                    options=parse_options(data.get('experiment_options'))
+                    case=parse_case(data['experiment_case'],config.speed) if data.get('experiment_case') is not None else None
+                    if case and data.get('trial',False):raise ValueError('비교 조건은 L자 전체 실험으로 실행하세요.')
+                    repeat=data.get('repeat',1)
+                    if type(repeat) is not int or not 1<=repeat<=999:raise ValueError('실험 회차는 1~999입니다.')
+                    if type(extra) not in (int,float) or not math.isfinite(extra) or not 0<=extra<=1:raise ValueError('회전 전 추가 직진은 0~1m 범위입니다.')
+                    for key in ('first','second'):
+                        value=data.get(key)
+                        if type(value) not in (int,float) or not math.isfinite(value) or not .2<=value<=10:raise ValueError('두 직선 거리는 0.2~10m 범위로 입력하세요.')
+                    if data['first']+extra>10:raise ValueError('추가 직진을 포함한 첫 직선은 10m 이내입니다.')
+                    if any(type(data.get(key,False)) is not bool for key in ('trial','brake','tray_level')):raise ValueError('시험 모드/급정지/수평 유지 설정 오류')
                 if kind=='follow-start':
                     if mode!='real':raise ValueError('사람 추종은 실제 카메라 연결 후 실차 모드에서 사용합니다.')
                     if lab.tray_modes['real']=='PREDICTIVE':raise ValueError('사람 추종은 트레이 실행 안함 또는 수평 유지로 사용해 주세요.')
@@ -508,17 +618,50 @@ def create_app(allow_real=False):
                             raise ValueError('로봇을 출발선에 놓거나 현재 위치를 새 출발선으로 설정해 주세요.')
                     if kind=='start' and data.get('kind') == 'bump' and data.get('bump_measured') is not True:
                         raise ValueError('실제 턱 높이·거리·폭을 입력해 주세요.')
-                    lab.require_tray_ready()
+                    if not (kind=='depth-route-start' and (options is not None or case is not None or data.get('tray_level') is True)):lab.require_tray_ready()
                 elif mode != 'preview':
                     raise ValueError('실행 모드를 확인해 주세요.')
                 if not lab.engine.active:
                     lab.save_run()
+                if kind!='depth-route-start':await lab.prepare_recording()
                 if kind=='depth-route-start':
                     local=lab.robot.local_route()
                     if local.get('transport_age_ms',99999)>800:raise ValueError('Jetson 내부 경로 제어 연결을 기다려 주세요.')
+                    if local.get('release')!=RELEASE:raise ValueError('Jetson 주행 프로세스가 이전 버전입니다. 새 Setup-Jetson.cmd 적용 후 다시 연결해 주세요.')
                     route_id=secrets.token_hex(16);request_id=secrets.token_hex(16);epoch=lab.stop_epoch
                     goal=dict(op='start',route_id=route_id,request_id=request_id,created_unix=time.time(),
                               bridge_session=local.get('bridge_session'),first=data.get('first'),second=data.get('second'),speed=config.speed,trial=data.get('trial',False),brake=data.get('brake',True))
+                    goal['turn_extension']=extra
+                    if options:
+                        if case or data.get('trial',False):raise ValueError('사용자 실험 세팅과 비교 조건/짧은 검증은 별도로 실행하세요.')
+                        if options['test']=='brake_line' and not options['smooth_pct'] and options['reuse_calibration']:
+                            records=await asyncio.to_thread(read_experiments,lab.run_dir/'experiments.sqlite3')
+                            for record in records:
+                                summary=json.loads(record.get('summary_json') or '{}');cal=summary.get('brake_calibration')
+                                if record['status']=='completed' and record['mode']=='real' and cal and abs(cal['trigger_speed']-config.speed)<.03:
+                                    options.update(deceleration=cal['effective_deceleration'],latency=0.)
+                                    goal['brake_model_source']='previous_same_speed_trial';break
+                        goal['experiment_options']=options
+                    goal['tray_predictive']=data.get('tray_predictive',lab.tray_modes['real']=='PREDICTIVE')
+                    if type(goal['tray_predictive']) is not bool:raise ValueError('트레이 연동 선택을 확인하세요.')
+                    goal['tray_level']=data.get('tray_level',False)
+                    if type(goal['tray_level']) is not bool:raise ValueError('수평 유지 연동 선택을 확인하세요.')
+                    if options:goal.update(tray_level=options['tray']!='CHASSIS',tray_predictive=options['tray']=='PREDICTIVE',brake=True)
+                    if case:
+                        goal.update(experiment_case=case['id'],experiment_label=case['label'],repeat=repeat,brake=True,tray_level=case['tray']!='OFF',tray_predictive=case['tray']=='PREDICTIVE')
+                    if goal['tray_predictive']:
+                        c=lab.prediction_configs['real']
+                        options=data.get('tray_prediction',{})
+                        if not isinstance(options,dict) or set(options)-{'lead','angle_limit','brake_seconds'}:raise ValueError('L자 예측 설정 항목 오류')
+                        settings=dict(lead=options.get('lead',c.lead),angle_limit=options.get('angle_limit',min(c.angle_limit,2.)),brake_seconds=options.get('brake_seconds',.2),roll_sign=c.roll_sign,pitch_sign=c.pitch_sign,swap_axes=c.swap_axes)
+                        RoutePredictionConfig.parse(settings);check_command(prediction_command(0,0),lab.tray_data)
+                        goal['tray_prediction']=settings
+                    if goal['tray_level']:
+                        await lab.prepare_route_level()
+                        local=lab.robot.local_route();goal.update(bridge_session=local.get('bridge_session'),created_unix=time.time())
+                    elif case:
+                        await lab.prepare_route_fixed()
+                        local=lab.robot.local_route();goal.update(bridge_session=local.get('bridge_session'),created_unix=time.time())
                     lab.pending_local_route=route_id
                     try:
                         deadline=time.monotonic()+1.5
@@ -583,7 +726,7 @@ def create_app(allow_real=False):
         fields = ['t', 'x', 'y', 'yaw', 'v', 'w', 'cmd_v', 'cmd_w', 'phase',
                   'tray_valid','tray_roll_deg','tray_pitch_deg','tray_mode','tray_age_s','tray_zero_saved',
                   'tray_control','tray_target_roll_deg','tray_target_pitch_deg','prediction_source',
-                  'requested_v','requested_w','motion_guard']
+                  'requested_v','requested_w','motion_guard','vehicle_imu_used','brake_eta_s','model_acceleration_m_s2']
         writer = csv.DictWriter(output, fieldnames=fields, extrasaction='ignore')
         writer.writeheader()
         writer.writerows(lab.engine.history)
@@ -599,10 +742,36 @@ def create_app(allow_real=False):
         return web.Response(body=jpeg, content_type='image/jpeg', headers={'Cache-Control':'no-store'})
 
     async def firmware(request):
-        response=web.FileResponse(ROOT/'firmware/esp32_app_control/esp32_app_control.ino')
-        response.headers['Content-Disposition']='attachment; filename="esp32_app_control.ino"'
+        response=web.FileResponse(ROOT/'firmware/esp32_level_predictive_v4/esp32_level_predictive_v4.ino')
+        response.headers['Content-Disposition']='attachment; filename="esp32_level_predictive_v4.ino"'
         response.headers['Cache-Control']='no-store'
         return response
+
+    async def experiments(request):
+        records=await asyncio.to_thread(read_experiments,lab.run_dir/'experiments.sqlite3')
+        return web.json_response({'ok':True,'experiments':records})
+
+    async def experiment_cases(request):
+        return web.json_response({'speeds_cm_s':[round(s*100) for s in SPEEDS],'cases':[{'id':k,**v} for k,v in CASES.items()]})
+
+    async def experiments_page(request):
+        return web.FileResponse(ROOT/'web/experiments.html')
+
+    async def experiment_setup_page(request):
+        return web.FileResponse(ROOT/'web/experiment_setup.html')
+
+    async def experiment_export(request):
+        rid=request.match_info['run_id'];fmt=request.match_info['format']
+        if not re.fullmatch(r'[A-Za-z0-9_-]{8,80}',rid) or fmt not in ('csv','json'):
+            raise web.HTTPNotFound()
+        record=await asyncio.to_thread(read_experiments,lab.run_dir/'experiments.sqlite3',rid)
+        if record is None:raise web.HTTPNotFound(text='실험 기록이 없습니다.')
+        if fmt=='json':
+            content=json.dumps(record,ensure_ascii=False);mime='application/json'
+        else:
+            output=io.StringIO(newline='');writer=csv.DictWriter(output,fieldnames=['run_id','seq',*FIELDS,'data_json'])
+            writer.writeheader();writer.writerows(record['samples']);content='\ufeff'+output.getvalue();mime='text/csv'
+        return web.Response(text=content,content_type=mime,headers={'Content-Disposition':f'attachment; filename="experiment_{rid}.{fmt}"','Cache-Control':'no-store'})
 
     async def startup(app):
         app['ticker'] = asyncio.create_task(lab.loop())
@@ -629,6 +798,11 @@ def create_app(allow_real=False):
     app.router.add_get('/api/export.csv', export)
     app.router.add_get('/api/camera.jpg', camera_frame)
     app.router.add_get('/api/firmware.ino', firmware)
+    app.router.add_get('/api/experiments', experiments)
+    app.router.add_get('/api/experiment-cases', experiment_cases)
+    app.router.add_get('/experiments', experiments_page)
+    app.router.add_get('/experiment-setup', experiment_setup_page)
+    app.router.add_get('/api/experiments/{run_id}.{format}', experiment_export)
     app.router.add_post('/api/{action}', action)
     app.router.add_get('/ws', socket)
     app.router.add_static('/static/', ROOT / 'web', show_index=False)

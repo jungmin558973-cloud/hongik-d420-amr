@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import {updateStopNotice} from './stop_notice.js';
 
 const $ = id => document.getElementById(id);
 const owner = crypto.randomUUID();
-const labels = {brake:'1m 후 급정지',turn:'1m 후 90° 턴',bump:'1.2m + 언덕 10cm 진입',teleop:'텔레옵 수동 조종',follow:'사람 따라가기'};
+const labels = {brake:'1m 후 급정지',turn:'1m 후 90° 턴',bump:'1.2m + 언덕 10cm 진입',teleop:'텔레옵 수동 조종',follow:'사람 따라가기','depth-route':'L자 전체 실험'};
 let token = '', mode = 'preview', state = null, selected = 'brake', pending = false;
 let lastPacket = 0, allowReal = false, serverOnline = false;
 let errorUntil = 0, lastPhase = '', lastMode = '', lastElapsed = 0;
@@ -219,6 +220,7 @@ function updateButtons() {
 }
 
 function renderState(next) {
+  updateStopNotice(next);
   state=next;
   if(next.active)selected=next.kind;
   if(lastMode!==next.mode || next.elapsed<lastElapsed-0.5 || lastCourseVersion!==next.course_version) clearTrail();
@@ -315,8 +317,9 @@ window.addEventListener('keydown',event=>{
 });
 window.addEventListener('keyup',event=>{if(heldKeys.delete(event.code)){event.preventDefault();manualAxes();sendManual();}});
 window.addEventListener('blur',()=>{if(manualOwned()||(state?.active&&state.kind==='follow'))stop();else clearManual();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state?.active&&(state.mode==='real'||manualOwned()))stop();});
-window.addEventListener('pagehide',()=>{if(state?.active&&state.mode==='real')fetch('/api/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Hongik-Control':token},body:'{}',keepalive:true}).catch(()=>{});});
+const localMission=()=>state?.kind==='depth-route'&&state.execution_host==='Jetson';
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state?.active&&!localMission()&&(state.mode==='real'||manualOwned()))stop();});
+window.addEventListener('pagehide',()=>{if(state?.active&&state.mode==='real'&&!localMission())fetch('/api/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Hongik-Control':token},body:'{}',keepalive:true}).catch(()=>{});});
 setInterval(()=>{if(state?.active&&!document.hidden)request('heartbeat',{owner}).catch(()=>{});},200);
 setInterval(()=>{if(manualOwned()&&!document.hidden)sendManual();},100);
 setInterval(()=>{if(lastPacket&&performance.now()-lastPacket>1500){serverOnline=false;$('link-dot').className='bad';$('link-label').textContent='화면 연결 끊김';updateButtons();}},500);

@@ -1,7 +1,9 @@
 import {rvizViewer} from './rviz.js';
+import {updateStopNotice} from './stop_notice.js';
+import {experimentMatrix,matrixState} from './experiment_matrix.js';
 const $=id=>document.getElementById(id),owner=crypto.randomUUID();
 let token='',state=null,run=null,pending=false,selection=null,planned='',image=null,imageKey='',view=null;
-let control='',sequence=0,owns=false,sending=false,cameraSeq=-1,cameraLoading=false,arming=false,armEpoch=0;
+let control='',sequence=0,owns=false,sending=false,cameraSeq=-1,cameraLoading=false,arming=false,armEpoch=0,localRouteOwned=false;
 const keys=new Set(),pointers=new Map(),keyMap={KeyW:'forward',ArrowUp:'forward',KeyS:'backward',ArrowDown:'backward',KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right'};
 const focusDrive=()=>$('drive-focus').focus({preventScroll:true});
 const viewer=rvizViewer({getToken:()=>token,request:(...args)=>request(...args),onFocus:focusDrive});
@@ -25,7 +27,9 @@ function buttons(){
   $('depth-prepare').disabled=busy||active;
   $('depth-go').disabled=busy||active||!run?.depth_route?.ready;
   $('depth-trial').disabled=$('depth-go').disabled;
-  for(const id of ['depth-first','depth-second','depth-speed','depth-brake'])$(id).disabled=busy||active;
+  matrixState(busy||active||!run?.depth_route?.ready||!run?.tray?.connected);
+  $('experiment-repeat').disabled=busy||active;
+  for(const id of ['depth-first','depth-extra','depth-second','depth-speed','depth-brake','depth-tray','depth-lead','depth-angle'])$(id).disabled=busy||active;
   $('manual').disabled=arming||busy||(!active&&!state?.manual_ready)||(!control&&active)||!state?.mapping_mode;
   $('manual').textContent=control&&active?'수동 조종 끄기 · R':'수동 조종 켜기 · R';
   $('keyboard-status').textContent=control&&active?(run?.neutral_required?'일시 정지 · 키를 모두 놓았다 다시 눌러 주세요':'조종 켜짐 · WASD / 방향키 · 놓으면 정지'):'R: 조종 켜기 · Space/Esc: 정지';
@@ -39,7 +43,7 @@ function buttons(){
   $('go').disabled||=!ready||!activeMap()?.remote_path||!state?.nav.ready||planned!==$('points').value;
 }
 function highlight(){const a=axes();for(const b of document.querySelectorAll('[data-motion]'))b.classList.toggle('held',({forward:a.forward>0,backward:a.forward<0,left:a.turn>0,right:a.turn<0})[b.dataset.motion]);}
-async function stop(){armEpoch++;keys.clear();pointers.clear();control='';owns=false;highlight();try{const r=await request('stop');if(state)state.active=r.state.active;}catch(e){notice(e.message,true);}buttons();}
+async function stop(){armEpoch++;localRouteOwned=false;keys.clear();pointers.clear();control='';owns=false;highlight();try{const r=await request('stop');if(state)state.active=r.state.active;}catch(e){notice(e.message,true);}buttons();}
 function axes(){const a=new Set([...keys].map(k=>keyMap[k]).concat([...pointers.values()]));return {forward:Number(a.has('forward'))-Number(a.has('backward')),turn:Number(a.has('left'))-Number(a.has('right'))};}
 async function send(){
   if(!control||!state?.active||document.hidden||sending)return;sending=true;
@@ -65,9 +69,9 @@ window.addEventListener('keydown',e=>{
   if(control&&keyMap[e.code]&&!editing){e.preventDefault();keys.add(e.code);highlight();send();}
 });
 window.addEventListener('keyup',e=>{if(keys.delete(e.code)){highlight();send();}});
-window.addEventListener('blur',()=>{if(owns&&state?.active)stop();});
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&owns&&state?.active)stop();});
-window.addEventListener('pagehide',()=>{if(owns&&state?.active)fetch('/api/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Hongik-Control':token},body:'{}',keepalive:true}).catch(()=>{});});
+window.addEventListener('blur',()=>{if(owns&&state?.active&&!localRouteOwned)stop();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&owns&&state?.active&&!localRouteOwned)stop();});
+window.addEventListener('pagehide',()=>{if(owns&&state?.active&&!localRouteOwned)fetch('/api/stop',{method:'POST',headers:{'Content-Type':'application/json','X-Hongik-Control':token},body:'{}',keepalive:true}).catch(()=>{});});
 $('stop').onclick=stop;$('pad-stop').onclick=stop;
 $('speed').oninput=()=>{$('speed-text').textContent=$('speed').value+' cm/s';send();};
 $('speed').addEventListener('pointerup',()=>{if(control)focusDrive();});
@@ -85,23 +89,24 @@ $('delete-point').onclick=()=>task('delete-point',{id:$('points').value});
 $('prepare-nav').onclick=()=>task('prepare-nav');
 $('plan').onclick=async()=>{if(await task('plan',{id:$('points').value})){planned=$('points').value;buttons();}};
 $('depth-prepare').onclick=()=>task('depth-prepare');
-async function startDepthRoute(trial){
+async function startDepthRoute(trial,condition=null,speed=null){
   if(pending||state?.active)return;
   const epoch=armEpoch;pending=true;buttons();
-  try{const r=await request('depth-route-start',{mode:'real',owner,trial,brake:$('depth-brake').checked,first:Number($('depth-first').value),second:Number($('depth-second').value),config:{speed:Number($('depth-speed').value)/100}});
-    if(epoch!==armEpoch||document.hidden){await stop();return;}
-    owns=r.state.active;control='';if(state)state.active=r.state.active;notice(r.state.message);focusDrive();
+  try{const r=await request('depth-route-start',{mode:'real',owner,trial,experiment_case:condition?.id,repeat:Number($('experiment-repeat').value),tray_level:true,brake:condition?true:$('depth-brake').checked,tray_predictive:$('depth-tray').checked,tray_prediction:{lead:Number($('depth-lead').value)/1000,angle_limit:Number($('depth-angle').value)},first:Number($('depth-first').value),turn_extension:Number($('depth-extra').value)/100,second:Number($('depth-second').value),config:{speed:(speed??Number($('depth-speed').value))/100}});
+    if(epoch!==armEpoch){await stop();return;}
+    owns=r.state.active;localRouteOwned=!!r.state.active;control='';if(state)state.active=r.state.active;notice(r.state.message);focusDrive();
   }catch(e){notice(e.message,true);}finally{pending=false;buttons();}
 }
 $('depth-go').onclick=()=>startDepthRoute(false);
 $('depth-trial').onclick=()=>startDepthRoute(true);
+experimentMatrix((condition,speed)=>startDepthRoute(false,condition,speed));
 $('nav-speed').oninput=()=>{$('nav-speed-text').textContent=$('nav-speed').value+' cm/s';};
 $('go').onclick=async()=>{if(await task('go',{id:$('points').value,owner,speed:Number($('nav-speed').value)/100})){owns=true;control='';}};
 $('points').onchange=()=>{planned='';buttons();draw();};
 $('yaw').oninput=draw;
 $('camera').onload=()=>{cameraLoading=false;};$('camera').onerror=()=>{cameraLoading=false;};
 function render(){
-  if(!state.active){control='';owns=false;keys.clear();pointers.clear();highlight();}
+  if(!state.active){control='';owns=false;localRouteOwned=false;keys.clear();pointers.clear();highlight();}
   $('run-status').textContent=state.active?state.run_message:state.sensor_reason||'정지 · '+state.run_message;
   $('map-status').textContent=state.map?`${(state.map.resolution*100).toFixed(0)}cm/셀 · ${state.map.width.toFixed(1)}×${state.map.height.toFixed(1)}m`:state.reason;
   const robot=state.map?.robot;
@@ -120,8 +125,14 @@ function render(){
     const key=state.map.session+':'+state.map.seq;imageKey=key;const next=new Image();next.onload=()=>{if(imageKey===key){image=next;draw();}};next.src=state.map.image;
   }
   if(run){
+    updateStopNotice(run);
+    const rec=run.recording||{};
+    const tray=run.tray||{};$('route-tray-link').textContent=tray.connected?`ESP32 연결 · ${tray.imu_fresh?'IMU 수신':'IMU 미준비'} · R ${Number.isFinite(tray.roll_deg)?tray.roll_deg.toFixed(2)+'°':'미확인'} / P ${Number.isFinite(tray.pitch_deg)?tray.pitch_deg.toFixed(2)+'°':'미확인'}`:'ESP32 미연결 · 15조건 비교 실험 전 주행·트레이 제어실에서 USB 목록 → ESP32 연결 및 영점·방향 확인이 필요합니다.';
+    $('experiment-recording').textContent=rec.error?'기록 오류 · '+rec.error:rec.run_id?`자동 기록 중 · ${rec.samples||0}개 · ${rec.run_id}`:'실험 시작 시 자동 기록 · 주행 단계·속도·각도·정지 사유 저장';
     const ages=run.depth_diagnostics||{},age=ages.source_unix_age_ms;
     $('depth-status').textContent=run.kind==='depth-route'?`${run.message||run.phase||''}${run.depth_paused?' · 새 영상 '+(run.depth_recovery_frames||0)+'/3':''}${Number.isFinite(age)?' · 깊이 지연 '+Math.round(age)+'ms':''}${run.brake_done?' · 중간 급정지 완료':''}`:run.depth_route?.ready?'전방 깊이 수신 중 · 거리 입력 후 시작':run.depth_route?.reason||'깊이 관측 대기';
+    const prediction=run.tray_prediction;
+    $('depth-tray-status').textContent=prediction?.enabled?`Jetson 예측 연동 · ${prediction.source||'출발 확인 중'} · 목표 R ${(prediction.roll_deg??0).toFixed(2)}° / P ${(prediction.pitch_deg??0).toFixed(2)}°`:'트레이 예측 미선택 · 기존 수평 유지 모드는 별도로 설정';
     const camera=run.camera;$('camera-status').textContent=camera?.available?`${camera.width}×${camera.height}`:'수신 대기';
     $('camera').hidden=!camera?.available;$('camera-wait').hidden=!!camera?.available;
     if(camera?.available&&camera.seq!==cameraSeq&&!cameraLoading){cameraLoading=true;cameraSeq=camera.seq;$('camera').src='/api/camera.jpg?seq='+camera.seq;}

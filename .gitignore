@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
-runs/
-backups/
-node_modules/
+.test-env/
+scenario_lab/runs/
+scenario_lab/backups/
+*.sqlite3*
+.env

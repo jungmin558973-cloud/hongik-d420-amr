@@ -1,3 +1,11 @@
+최신 배포 09: README_LEVEL_L.txt와 EXPERIMENT_SETUP_20261116.md를 먼저 읽으세요.
+
+최신 배포 08: README_LEVEL_L.txt와 EXPERIMENT_15_CASES_20261116.md를 먼저 읽으세요.
+
+최신 배포 07: README_LEVEL_L.txt와 L_ROUTE_DATABASE_20261116.md를 먼저 읽으세요.
+
+최신 수평 유지 + L자 시험: README_LEVEL_L.txt와 CURRENT_STATUS_20261116.md를 먼저 읽으세요.
+
 L자 시험 업데이트: README_L_TEST.txt를 먼저 읽으세요.
 
 HONGIK CAFE — Windows 연결 앱 / 2026-11-15

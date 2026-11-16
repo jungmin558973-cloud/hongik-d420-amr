@@ -66,7 +66,7 @@ class RouteTests(unittest.TestCase):
    s.t+=.05;e.observe(obs(s.t),s.t);e.step(s.t,Pose(v=.02))
   self.assertFalse(e.active);self.assertIn('정지 확인 시간 초과',e.message)
  def test_validation_and_slow_route_budget(self):
-  for values in [(True,1,.12),(1,1,float('nan')),(1,1,.4)]:
+  for values in [(True,1,.12),(1,1,float('nan')),(1,1,.41)]:
    with self.assertRaises(ValueError):DepthRoute().arm(*values,1,Pose(),obs(1),1)
   with self.assertRaises(ValueError):DepthRoute().arm(1,1,.12,1,Pose(),obs(1),1,brake='yes')
   s=Simulation(speed=.03,first=4,second=4);self.assertGreater(s.e.route_timeout,8/.03)

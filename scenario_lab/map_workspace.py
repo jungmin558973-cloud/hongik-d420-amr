@@ -165,6 +165,7 @@ class MapWorkspace:
                 stop_epoch=self.lab.stop_epoch
                 nav=self.lab.robot.navigation();self.path=await nav.plan(point)
                 if kind=='go':
+                    await self.lab.prepare_recording()
                     speed=Config.parse({'speed':data.get('speed',.40)},max_speed=1.5).speed
                     # Recheck after planning: no motion if sensors/position became stale.
                     if self.lab.stop_epoch!=stop_epoch:raise ValueError('정지 요청으로 이동을 취소했습니다.')

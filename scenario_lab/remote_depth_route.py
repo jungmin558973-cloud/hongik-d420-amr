@@ -12,7 +12,7 @@ class RemoteDepthRoute(Engine):
    self.active=False;self.state='stopped';self.command=(0.,0.);self.message='Jetson 제어 세션이 재시작됐습니다.';return
   if data.get('route_id')!=self.route_id or not data.get('engine') or data.get('transport_age_ms',99999)>800:
    self.stale=True;self.message='화면 연결 지연 · Jetson 센서 기반 주행 상태 확인 중';return
-  self.remote=data['engine'];self.stale=False;self.bridge_session=data.get('bridge_session');self.trial=data.get('trial',True)
+  self.remote=data['engine'];self.recording=data.get('recording',{});self.stale=False;self.bridge_session=data.get('bridge_session');self.trial=data.get('trial',True)
   self.active=bool(self.remote['active']);self.message=('정지 요청 전송 중 · Jetson 확인 대기' if self.stop_requested and self.active else self.remote['message'])
   self.command=(0.,0.)  # The proxy NEVER publishes the remote motor command.
   if not self.active:self.state='done' if self.remote['state']=='done' else 'stopped'
@@ -25,6 +25,6 @@ class RemoteDepthRoute(Engine):
   self.message='정지 요청 전송 중 · Jetson 확인 대기'
  def snapshot(self,now):
   d=dict(self.remote) if self.remote else super().snapshot(now)
-  d.update(kind='depth-route',mode='real',active=self.active,message=self.message,
+  d.update(kind='depth-route',mode='real',active=self.active,message=self.message,recording=getattr(self,'recording',{}),
    execution_host='Jetson',display_connection_stale=self.stale,route_id=self.route_id,stop_confirmation_pending=self.stop_requested and self.active,trial=self.trial,trial_limits={'distance_m':.6,'duration_s':10.,'speed_m_s':.12} if self.trial else None)
   return d
