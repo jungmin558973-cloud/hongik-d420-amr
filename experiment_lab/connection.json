@@ -1,0 +1,6 @@
+{
+  "jetson_address": "192.168.0.47",
+  "local_port": 18776,
+  "agent_url": "http://127.0.0.1:18876",
+  "native_forward": true
+}

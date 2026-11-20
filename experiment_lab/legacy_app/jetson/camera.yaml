@@ -1,0 +1,6 @@
+# rs_launch.py reads a flat parameter dictionary, not a ROS node-keyed YAML.
+rgb_camera.frames_queue_size: 1
+depth_module.frames_queue_size: 1
+align_depth.frames_queue_size: 1
+depth_qos: SENSOR_DATA
+color_qos: SENSOR_DATA

@@ -1,0 +1,47 @@
+{
+  "strength_50_config": {
+    "distance": 1.6,
+    "speed": 0.2,
+    "acceleration": 0.2,
+    "deceleration": 0.25,
+    "jerk": 0.5,
+    "settle": 8,
+    "fill_pct": 70,
+    "water_g": 200,
+    "diameter_mm": 80,
+    "lead": 0.2,
+    "angle_limit": 3,
+    "gain": 1,
+    "angle_rate": 8,
+    "cup": "transparent",
+    "notes": "",
+    "scenario": "planned_stop",
+    "lid": false,
+    "return_home": false,
+    "s_curve": true,
+    "tray": "OFF",
+    "s_curve_strength": 50,
+    "require_4k": false,
+    "record_priority": true,
+    "stop_semantics": "brake_at_distance",
+    "camera_setting": "auto-DSHOW-{}",
+    "repeats": 3,
+    "obstacle_stop": false,
+    "post_roll": 2
+  },
+  "playback_metadata": {
+    "time": 11.509591,
+    "duration": 21.745,
+    "width": 1920,
+    "height": 1080,
+    "error": null
+  },
+  "playback_running": {
+    "paused": false,
+    "time": 12.2255
+  },
+  "peak_video_time_s": 11.509591,
+  "quarter_speed": true,
+  "js_errors": [],
+  "mobile_overflow": false
+}

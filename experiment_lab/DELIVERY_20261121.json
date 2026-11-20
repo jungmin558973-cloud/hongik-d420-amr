@@ -1,0 +1,20 @@
+{
+  "program": {
+    "file": "HONGIK_D420_실험_분석_프로그램_20261121.zip",
+    "bytes": 2868029,
+    "files": 260,
+    "sha256": "0ee7c234a78473ce901098db861ee423fcaa50caf746397531fa3a3ac38281d6"
+  },
+  "data": {
+    "file": "HONGIK_D420_실험데이터_분석결과_20261121.zip",
+    "bytes": 428571201,
+    "files": 203,
+    "sha256": "bf87eb7ef7e4bf40292766a984a5d2a01e1645cacb15b8cdc66108721d27d40c"
+  },
+  "excluded": [
+    "credentials",
+    "runtime SQLite index",
+    "duplicate per-condition ZIPs",
+    "camera preview cache"
+  ]
+}

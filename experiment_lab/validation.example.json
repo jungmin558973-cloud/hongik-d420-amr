@@ -1,0 +1,8 @@
+{
+  "max_speed": 0.12,
+  "max_distance": 0.6,
+  "s_curve": false,
+  "tray_modes": ["OFF"],
+  "reverse": false,
+  "evidence": "Replace with dated local test evidence and operator identity; initial short-test envelope is not approval for new controller."
+}

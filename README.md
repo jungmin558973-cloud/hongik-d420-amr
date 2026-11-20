@@ -1,5 +1,12 @@
 # HONGIK D420 AMR · 주행·트레이 실험
 
+## 녹화·출렁임 분석실 · 2026-11-21
+
+새 모듈: [실험·영상 분석실](experiment_lab/README.md). 1.6m 급정지 촬영, 정지 후 10초 녹화, OpenCV 액면 점 추적, H.264 분석 영상 재생, S-curve 0~100 강도를 추가합니다. 기존 `scenario_lab/`은 유지합니다.
+
+자동 테스트 93개 통과. 중간 S-curve 강도 실차 검증과 IMU·mm 보정은 미완료입니다. 원본 실험 데이터·인증키는 공개 저장소에 포함하지 않습니다. [배포 전 확인 범위](experiment_lab/배포전_현황과_보충점.md).
+
+
 최신 배포 **09 / 2026-11-16**. Jetson 로컬 주행 + ESP32 트레이 + Windows 연결 앱입니다.
 
 - [Windows 전체 설치 ZIP](https://drive.google.com/file/d/1kZRE0z25H4UatxLoMG0xzAzMzVb4vaU9/view?usp=drivesdk)

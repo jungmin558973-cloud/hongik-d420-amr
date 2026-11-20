@@ -1,0 +1,20 @@
+[Unit]
+Description=HONGIK CAFE sensors and single armable motor bridge
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/d420_ws
+Environment=D420_MAPPING_MODE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash %h/d420_ws/scenario_lab/jetson/start.sh
+Restart=on-failure
+RestartSec=10
+KillSignal=SIGINT
+KillMode=control-group
+TimeoutStopSec=30
+StandardOutput=append:%h/d420_ws/scenario_lab/jetson/session.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target
