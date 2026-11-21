@@ -174,9 +174,23 @@ def refresh_recorder(root,home):
     unit='hongik-experiment-recorder.service'
     owner=subprocess.run(['systemctl','--user','show',unit,'--property=MainPID','--value'],capture_output=True,text=True,timeout=5)
     if owner.stdout.strip()==str(found[0]):
+        unit_path=home/'.config/systemd/user'/unit
+        text=unit_path.read_text()
+        if not text.startswith('# HONGIK D420 isolated experiment recorder\n'):
+            raise RuntimeError('Unknown recorder unit; refused to change stop policy')
+        if 'TimeoutStopSec=5\n' not in text:
+            shutil.copy2(unit_path,private/'recorder-service-before-stop-timeout.service')
+            unit_path.write_text(text.replace('RestartSec=3\n','RestartSec=3\nTimeoutStopSec=5\nKillMode=control-group\n'))
+            subprocess.run(['systemctl','--user','daemon-reload'],check=True,timeout=10)
         # Let systemd own replacement so Restart=on-failure cannot create a
         # competing recorder while a manual replacement is being spawned.
-        subprocess.run(['systemctl','--user','restart',unit],check=True,timeout=20)
+        try:subprocess.run(['systemctl','--user','restart',unit],check=True,timeout=10)
+        except subprocess.TimeoutExpired:
+            old=Path('/proc',str(found[0]))
+            if old.exists():
+                if b'lab.agent' not in (old/'cmdline').read_bytes().split(b'\0') or (old/'cwd').resolve()!=root.resolve():raise RuntimeError('Recorder identity changed; refused force stop')
+                os.kill(found[0],signal.SIGKILL)
+            subprocess.run(['systemctl','--user','start',unit],check=True,timeout=15)
         for _ in range(50):
             try:
                 with urllib.request.urlopen(req,timeout=1) as r:data=json.load(r)

@@ -90,6 +90,8 @@ class Manager:
                 if camera.get('width',0)<3840 or camera.get('height',0)<2160:
                     raise ValueError('Research protocol requires native >=3840x2160. Current camera is not 4K; preview/record-only is preliminary only.')
             if shutil.disk_usage(self.store.root).free<512*1024**2:raise ValueError('Need at least 512 MiB free')
+            if hasattr(self.backend,'recover_closed_recording'):
+                self.start_step='이전 실험 로그 정리';self.backend.recover_closed_recording(self.store)
             self.start_step='시각 동기화';generation=self.stop_generation
             try:
                 if self.clock.get('quality')!='good' or time.time()-self.clock.get('measured_windows_utc',0)>30:self.clock=self.backend.clock()
@@ -274,7 +276,7 @@ class Manager:
 
     def heartbeat_loop(self):
         while not self.closed.is_set():
-            if self.active and not self.record_only:
+            if (self.active or (self.starting and self.remote_recording and self.start_step=='자동 주행 명령 전달')) and not self.record_only:
                 if time.perf_counter()-self.browser_at>.6:
                     self.stop('Browser dead-man heartbeat lost')
                 else:

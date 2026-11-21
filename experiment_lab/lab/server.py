@@ -108,7 +108,8 @@ def create_app(manager=None,real=False,camera_only=False):
             if not m.backend.simulated and c.record_priority and (camera.get('width',0)<1920 or camera.get('height',0)<1080):reasons.append('C920 최고 화질 1920×1080 연결 필요')
             if c.require_4k and (camera.get('width',0)<3840 or camera.get('height',0)<2160):reasons.append('4K 조건 미충족: C920 예비시험을 선택하거나 4K 장치를 연결하세요')
             if not c.record_priority and m.roi.get('method')=='marker_blue' and not camera.get('measurement',{}).get('reference_locked'):reasons.append('초록선 위치의 정지 기준면 저장 필요')
-            if not getattr(m.backend,'can_arm',True):reasons.insert(0,'Jetson 자동 실험 제어 어댑터 미연결: 기록 전용 연결과 별개입니다')
+            if not getattr(m.backend,'can_arm',True):
+                reasons.insert(0,'Jetson SSH 응답 지연·연결 재시도 중입니다.' if m.robot.get('connection_error') else 'Jetson 제어 상태 수신 대기 중입니다.')
             age=m.robot.get('odom_age')
             if not m.backend.simulated and (age is None or age>.3):reasons.append('최신 오도메트리 미수신: 주행 허용 불가')
             if not m.backend.simulated:

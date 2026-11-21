@@ -89,7 +89,6 @@ class Store:
 
     def begin(self,c,simulated=False):
         now=time.time();seoul=datetime.fromtimestamp(now,timezone(timedelta(hours=9)))
-        rid='RUN_'+seoul.strftime('%Y%m%d_%H%M%S')+'_'+uuid.uuid4().hex[:10]
         modes={(False,'OFF'):'A',(True,'OFF'):'B',(False,'LEVEL'):'C',(True,'LEVEL'):'D',(False,'PREDICTIVE'):'E',(True,'PREDICTIVE'):'F'}
         mode=modes[(c.get('s_curve',True),c.get('tray','OFF'))]
         condition=f"{mode}_{c.get('distance',1.6):g}m_{c.get('speed',.2)*100:g}cmps"
@@ -101,15 +100,26 @@ class Store:
         identity={k:c.get(k) for k in ('distance','speed','s_curve','tray','scenario')}
         identity['s_curve_strength']=strength
         group=self.root/seoul.strftime('%Y-%m-%d')/condition
-        stem=(f"L{c.get('distance',1.6):.2f}m_V{c.get('speed',.2)*100:g}cmps_"
+        stem_prefix=(f"L{c.get('distance',1.6):.2f}m_V{c.get('speed',.2)*100:g}cmps_"
               f"S{'ON' if c.get('s_curve',True) else 'OFF'}_T{c.get('tray','OFF')}_SC{strength:g}_"
               f"a{c.get('acceleration',.2):g}_d{c.get('deceleration',.25):g}_j{c.get('jerk',.5):g}_"
-              f"Obs{c.get('settle',10)+c.get('post_roll',0):g}s_{seoul.strftime('%H%M%S')}_{rid[-4:]}")
+              f"Obs{c.get('settle',10)+c.get('post_roll',0):g}s_")
         with self.lock:
             group.mkdir(parents=True,exist_ok=True)
             dump(group/'condition.json',identity)
             repeat=sum(child.is_dir() for child in group.iterdir())+1
-            path=group/(stem+'_촬영중');path.mkdir()
+            for attempt in range(100):
+                uid=uuid.uuid4().hex;stamp=seoul.strftime('%H%M%S_%f')[:-3]
+                rid='RUN_'+seoul.strftime('%Y%m%d_')+stamp+'_'+uid
+                stem=stem_prefix+stamp+'_'+uid[:10]+(f'_n{attempt+1}' if attempt else '')
+                if any(group.glob(stem+'_*')):continue
+                with self.connect() as db:
+                    if db.execute('SELECT 1 FROM experiment_index WHERE run_id=?',(rid,)).fetchone():continue
+                path=group/(stem+'_촬영중')
+                try:path.mkdir() # Exclusive reservation; never reuse/overwrite a folder.
+                except FileExistsError:continue
+                break
+            else:raise ValueError('고유 실험 이름 생성 실패: 기존 데이터는 변경하지 않았습니다.')
         label={'run_id':rid,'condition':condition,'repeat':repeat,'folder_stem':stem,'display_name':stem+'_촬영중','folder':str(path)}
         dump(path/'run_label.json',label)
         dump(path/'config.json',c);dump(path/'manifest.json',{'run_id':rid,'status':'RECORDING','simulated':simulated,'display_name':label['display_name'],'repeat':repeat,'files':{}})
@@ -144,10 +154,12 @@ class Store:
         target=path.with_name(name)
         if not path.resolve().is_relative_to(self.root):raise ValueError('Run path outside data root')
         if target!=path:
-            if target.exists():target=path.with_name(name+'_'+rid[-6:])
+            counter=0
+            while target.exists():
+                counter+=1;target=path.with_name(name+'_'+rid[-8:]+f'_{counter}')
             try:path.rename(target)
             except OSError:outcome['folder_rename_pending']=name;target=path
-        label.update(folder=str(target),display_name=name,completion=outcome)
+        label.update(folder=str(target),display_name=target.name,completion=outcome)
         dump(target/'run_label.json',label)
         with self.connect() as db:db.execute('UPDATE experiment_index SET path=? WHERE run_id=?',(str(target),rid))
         return target

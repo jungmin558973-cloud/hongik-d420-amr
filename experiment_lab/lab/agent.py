@@ -48,7 +48,11 @@ def create_agent(root,token,collector=None):
         with lock:
             rid=(request.get_json() or {}).get('run_id','')
             if not re.fullmatch(r'RUN_[A-Za-z0-9_-]{10,80}',rid):raise ValueError('Invalid run_id')
-            if current['recording'] or (root/rid).exists():raise ValueError('Run already exists; no duplicate recording')
+            if current['recording']:
+                if current['run']==rid and not current['error']:
+                    return jsonify(ok=True,run_id=rid,reused=True)
+                raise ValueError('이전 실험 로그 기록이 아직 열려 있습니다: '+str(current['run']))
+            if (root/rid).exists():raise ValueError('이미 사용한 실험 ID입니다. 새 실험으로 시작하세요: '+rid)
             path=root/rid;path.mkdir();ros.start_record(path)
             current.update(run=rid,recording=True,error='')
             return jsonify(ok=True,run_id=rid)
@@ -56,6 +60,9 @@ def create_agent(root,token,collector=None):
     @app.post('/record/stop')
     def record_stop():
         with lock:
+            rid=(request.get_json() or {}).get('run_id')
+            if not rid:raise ValueError('종료할 실험 ID가 필요합니다.')
+            if current['recording'] and rid!=current['run']:raise ValueError('다른 실험의 기록을 종료할 수 없습니다.')
             if current['recording']:
                 try:ros.stop_record()
                 finally:current['recording']=False

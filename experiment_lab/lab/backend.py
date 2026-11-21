@@ -104,24 +104,45 @@ class RemoteBackend:
             a=time.time();r=self.call('/clock');d=time.time();probes.append((a,r['receive_utc'],r['send_utc'],d))
         result=estimate(probes);result['measured_windows_utc']=time.time();self.clock_offset=result['jetson_minus_windows_s'];return result
     def record(self,rid,path):
+        self.recording_run_id=rid
         try:self.call('/record/start',{'run_id':rid})
-        except (requests.Timeout,requests.ConnectionError):
+        except (requests.Timeout,requests.ConnectionError,ValueError):
             # Recover an accepted recording ACK; never resend START or steal
             # another recording after an uncertain network response.
             state=self.call('/status')
             if not (state.get('recording') and state.get('recording_run_id')==rid and not state.get('record_error')):raise
+
+    def recover_closed_recording(self,store):
+        state=self.call('/status')
+        if not state.get('recording'):return
+        rid=state.get('recording_run_id')
+        row=next((r for r in store.list() if r['run_id']==rid),None)
+        stopped=(state.get('state') in ('READY','ARMED','COMPLETE','ABORTED','ERROR') and state.get('v') is not None and abs(state['v'])<.008 and state.get('odom_age',999)<.3)
+        if not row or row['status'] not in ('COMPLETE','ABORTED','ERROR') or not stopped:
+            raise ValueError('기존 실험 로그가 열려 있습니다. 해당 실험 종료·차체 정지를 먼저 확인하세요: '+str(rid))
+        self.stop_record(rid)
+        path=store.path(rid);self.download(rid,path)
+        Journal(path).append('events.jsonl',{'utc':time.time(),'event':'RECORDER_RECOVERED','run_id':rid,'reason':'closed local trial, confirmed stopped chassis; raw writer closed and downloaded'})
+        manifest=json.loads((path/'manifest.json').read_text(encoding='utf-8'))
+        store.finalize(rid,row['status'],manifest.get('clock',{}))
     def start(self,c,rid,token):
+        self.control_run_id=rid
         self.status['run_id']=rid
         config=asdict(c)
         if not self.status.get('capabilities',{}).get('s_curve_strength'):
             if c.s_curve and c.s_curve_strength not in (0,100):raise ValueError('Jetson 제어 모듈 업데이트가 필요합니다. S-curve 0/100은 기존 방식으로 사용 가능합니다.')
             config.pop('s_curve_strength',None)
-        self.call('/control/start',{'config':config,'run_id':rid,'arm_token':token})
+        try:self.call('/control/start',{'config':config,'run_id':rid,'arm_token':token})
+        except (requests.Timeout,requests.ConnectionError):
+            state=self.call('/status')
+            accepted=(state.get('run_id')==rid and state.get('recording_run_id')==rid and state.get('recording') and not state.get('record_error') and state.get('state') in ('RECORDING','MOVING','BRAKING','STOPPING','SETTLING','POSTROLL','COMPLETE'))
+            if not accepted:raise
+            self.status=state # Recover only the accepted same run; never resend START.
     def beat(self,seq):
         if not hasattr(self,'beat_session'):
             self.beat_session=requests.Session();self.beat_session.trust_env=False
             self.beat_session.headers.update(self.session.headers)
-        r=self.beat_session.post(self.url+'/control/beat',json={'run_id':self.status.get('run_id'),'seq':seq},timeout=(.3,.3))
+        r=self.beat_session.post(self.url+'/control/beat',json={'run_id':getattr(self,'control_run_id',None) or self.status.get('run_id'),'seq':seq},timeout=(.3,.3))
         r.raise_for_status()
     def stop(self,reason='Operator STOP'):
         if self.status.get('control_available',True):return self.call('/control/stop',{})
@@ -146,7 +167,15 @@ class RemoteBackend:
             self.status['checks']={'live':self.status.get('odom_age',999)<.3,'sensors':False}
             self.status['state']='RECORDING_ONLY'
         return self.status
-    def stop_record(self):self.call('/record/stop',{})
+    def stop_record(self,rid=None):
+        rid=rid or getattr(self,'recording_run_id',None)
+        if not rid:raise ValueError('Cannot close recording without its experiment ID')
+        try:self.call('/record/stop',{'run_id':rid})
+        except (requests.Timeout,requests.ConnectionError):
+            state=self.call('/status')
+            if not state.get('recording'):return
+            if state.get('recording_run_id')!=rid:raise ValueError('Recording ownership changed; another run was preserved')
+            self.call('/record/stop',{'run_id':rid})
     def download(self,rid,path):
         # Stream to disk; preserve Jetson originals if network drops.
         archive=Path(path)/'jetson_raw.zip'
