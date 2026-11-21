@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+experiments/
+*.sqlite3*
+.env
+oauth_client.json
+token.json
+validation.local.json
+legacy_app/runs/
+
+validation/mock_runtime/
+validation/*server*.log
+validation/roi_debug.png
+lab/forward_key.py

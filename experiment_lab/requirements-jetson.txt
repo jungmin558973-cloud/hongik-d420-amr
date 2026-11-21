@@ -1,0 +1,3 @@
+# ROS2 Humble supplies rclpy, rosbag2_py and message packages from apt.
+# Use Ubuntu system Python (3.10), NOT the Windows Python environment/lock.
+Flask==3.1.2

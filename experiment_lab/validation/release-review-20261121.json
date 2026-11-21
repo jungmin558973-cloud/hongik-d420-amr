@@ -1,0 +1,9 @@
+{
+  "automated_tests": 93,
+  "ui_evidence": "curve-and-playback-ui.json",
+  "peak_frame_seek": 306,
+  "peak_browser_time_s": 11.5105,
+  "real_vehicle_strength_tested": false,
+  "remote_update_state": "WAITING_FOR_JETSON",
+  "definition": "0=existing OFF,100=existing ON,effective jerk=base jerk*100/strength; abrupt stop unchanged"
+}

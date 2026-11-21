@@ -1,0 +1,45 @@
+{
+  "run_id": "RUN_20261120_223637_edc487e8e4",
+  "window": {
+    "confirmed": true,
+    "end": 21.70326256752014,
+    "max_rise_px": 20.620024132955166,
+    "rms_px": 4.232625224300081,
+    "start": 10.506572723388672,
+    "total_frames": 287,
+    "valid_frames": 264,
+    "valid_ratio": 0.9198606271777003
+  },
+  "peak": {
+    "available": true,
+    "clock_quality": "uncertain",
+    "frame_seq": 306,
+    "note": "Image-plane rise above stationary baseline; no uncalibrated mm claim",
+    "peak_rise_px": 20.620024132955166,
+    "physical_height_mm": null,
+    "stop_window_confirmed": true,
+    "sync_uncertainty_s": 0.07947516441345215,
+    "windows_utc": 1795181808.7932377
+  },
+  "clock": {
+    "end_check": {
+      "jetson_minus_windows_s": 0.2453070878982544,
+      "measured_windows_utc": 1795181823.434279,
+      "probes": 3,
+      "quality": "uncertain",
+      "uncertainty_s": 0.052753329277038574
+    },
+    "jetson_minus_windows_s": 0.2529633045196533,
+    "measured_windows_utc": 1795181797.239911,
+    "offset_drift_s": -0.007656216621398926,
+    "probes": 3,
+    "quality": "uncertain",
+    "uncertainty_s": 0.07947516441345215
+  },
+  "js_errors": [],
+  "desktop_checked": true,
+  "mobile_overflow": false,
+  "graph_seek_checked": true,
+  "peak_seek_checked": true,
+  "automated_tests_passed": 71
+}
